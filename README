@@ -1,2 +1,16 @@
-wifi/3g to lan bridging script for Raspberrypi using iptables.
+Use Raspberrypi as a wifi/3g to lan bridge using iptables
+--------------------------------------------------------
+Convert your Raspberry pi into a wireless network to wired LAN bridge.
+That is wlan0 to eth0 or ppp0 to eth0.
+
+Requirements
+------------
+For 3g USB modem to wired LAN (ppp0 to eth0)
+1. sudo apt-get install ppp
+2. sakis3g (included)
+
+/etc/sakis3g.conf - configuration files for 3g modem
+/usr/bin/sakis3g - sakis3g connection manager for 3g modem.
+restiptables - Script to reset your current iptables
+setiptables3g - enables packet forwarding between ppp0 and eth0, and also for NAT.
 
