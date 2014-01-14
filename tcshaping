@@ -1,0 +1,39 @@
+#!/bin/sh
+#Setting up tc#eth0
+#defaults
+#root
+tc qdisc add dev eth0 root handle 1: htb default 10
+#eth0 Classes for downlink control in 192.168.2.0/24 (IN)
+tc class add dev eth0 parent 1: classid 1:1 htb rate 100000kbit
+tc class add dev eth0 parent 1:1 classid 1:10 htb rate 100000kbit prio 1
+tc class add dev eth0 parent 1:1 classid 1:20 htb rate 48kbps prio 2
+tc class add dev eth0 parent 1:1 classid 1:30 htb rate 32kbps prio 3
+
+#Setting up tc#wlan0
+#defaults
+#root
+tc qdisc add dev wlan0 root handle 1: htb default 10
+#wlan0 Classes for uplink control in 192.168.2.0/24 (OUT)
+tc class add dev wlan0 parent 1: classid 1:1 htb rate 100000kbit
+tc class add dev wlan0 parent 1:1 classid 1:10 htb rate 100000kbit prio 1
+tc class add dev wlan0 parent 1:1 classid 1:20 htb rate 48kbps prio 2
+tc class add dev wlan0 parent 1:1 classid 1:30 htb rate 32kbps prio 3
+
+tc qdisc add dev eth0 parent 1:10 handle 10: sfq perturb 10
+tc qdisc add dev eth0 parent 1:20 handle 20: sfq perturb 10
+tc qdisc add dev eth0 parent 1:30 handle 30: sfq perturb 10
+
+tc qdisc add dev wlan0 parent 1:10 handle 10: sfq perturb 10
+tc qdisc add dev wlan0 parent 1:20 handle 20: sfq perturb 10
+tc qdisc add dev wlan0 parent 1:30 handle 30: sfq perturb 10
+
+tc filter add dev eth0 protocol ip parent 1:0 handle 2 fw flowid 1:30
+tc filter add dev wlan0 protocol ip parent 1:0 handle 2 fw flowid 1:30
+
+#DHCP dest ips speed set to class 1:30 for eth0 in. But not from LAN
+iptables -t mangle -I POSTROUTING -o eth0 -m iprange --dst-range 192.168.2.10-192.168.2.20 ! -s 192.168.2.0/24 -j MARK --set-mark 2
+#DHCP dest ips speed set to class 1:30 for wlan0 out. But not to LAN
+iptables -t mangle -I POSTROUTING -o wlan0 -m iprange --src-range 192.168.2.10-192.168.2.20 ! -d 192.168.2.0/24 -j MARK --set-mark 2
+tc filter add dev eth0 protocol ip parent 1:0 handle 2 fw flowid 1:30
+tc filter add dev wlan0 protocol ip parent 1:0 handle 2 fw flowid 1:30
+
